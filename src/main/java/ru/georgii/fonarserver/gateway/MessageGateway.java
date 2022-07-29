@@ -34,7 +34,7 @@ import javax.annotation.PreDestroy;
 import java.util.*;
 
 @Component
-public class MessageGateway implements WebSocketHandler {
+public class MessageGateway {
 
     private static final Logger log = LoggerFactory.getLogger(MessageGateway.class);
     @Autowired
@@ -55,7 +55,7 @@ public class MessageGateway implements WebSocketHandler {
 
 
     //private SocketIOServer server;
-    ServerWrapper serverWrapper;
+    //ServerWrapper serverWrapper;
     private Map<Long, Set<SocketIoSocket>> connections;
 
 
@@ -78,7 +78,7 @@ public class MessageGateway implements WebSocketHandler {
             }
         }
 
-        serverWrapper.stopServer();
+        //serverWrapper.stopServer();
     }
 
     @PostConstruct
@@ -235,30 +235,6 @@ public class MessageGateway implements WebSocketHandler {
         }
     }
 
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-
-    }
-
-    @Override
-    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-
-    }
-
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-
-    }
-
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-
-    }
-
-    @Override
-    public boolean supportsPartialMessages() {
-        return false;
-    }
 
 //
 //    private ConnectListener onConnected() {
