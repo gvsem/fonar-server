@@ -31,16 +31,16 @@ public final class ServerWrapper {
     private final SocketIoServer mSocketIoServer;
 
     public ServerWrapper(String ip, int port, String[] allowedCorsOrigins) {
-        PORT_START = new AtomicInteger(port);
 
-        mPort = PORT_START.getAndIncrement();
-        mServer = new Server(new InetSocketAddress(ip, mPort));
         eioOptions = EngineIoServerOptions.newFromDefault();
         eioOptions.setAllowedCorsOrigins(allowedCorsOrigins);
 
         mEngineIoServer = new EngineIoServer(eioOptions);
         mSocketIoServer = new SocketIoServer(mEngineIoServer);
 
+        PORT_START = new AtomicInteger(port);
+        mPort = PORT_START.getAndIncrement();
+        mServer = new Server(new InetSocketAddress(ip, mPort));
         System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
         System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
 

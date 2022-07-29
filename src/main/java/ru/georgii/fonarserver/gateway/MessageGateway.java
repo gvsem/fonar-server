@@ -7,6 +7,8 @@ package ru.georgii.fonarserver.gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.socket.engineio.server.Emitter;
+import io.socket.engineio.server.EngineIoServer;
+import io.socket.engineio.server.EngineIoServerOptions;
 import io.socket.socketio.server.SocketIoNamespace;
 import io.socket.socketio.server.SocketIoServer;
 import io.socket.socketio.server.SocketIoSocket;
@@ -15,6 +17,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketMessage;
+import org.springframework.web.socket.WebSocketSession;
 import ru.georgii.fonarserver.auth.AuthService;
 import ru.georgii.fonarserver.dialog.Message;
 import ru.georgii.fonarserver.dialog.MessageService;
@@ -28,7 +34,7 @@ import javax.annotation.PreDestroy;
 import java.util.*;
 
 @Component
-public class MessageGateway {
+public class MessageGateway implements WebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MessageGateway.class);
     @Autowired
@@ -52,6 +58,13 @@ public class MessageGateway {
     ServerWrapper serverWrapper;
     private Map<Long, Set<SocketIoSocket>> connections;
 
+
+    private EngineIoServerOptions eioOptions;
+    public EngineIoServer mEngineIoServer;
+    private SocketIoServer mSocketIoServer;
+
+
+
     public MessageGateway() {
 
     }
@@ -71,15 +84,23 @@ public class MessageGateway {
     @PostConstruct
     public void postConstructInit() {
 
-        serverWrapper = new ServerWrapper("::", fonar.busPort, null);
-        // null means "allow all" as stated in https://github.com/socketio/engine.io-server-java/blob/f8cd8fc96f5ee1a027d9b8d9748523e2f9a14d2a/engine.io-server/src/main/java/io/socket/engineio/server/EngineIoServerOptions.java#L26
-        try {
-            serverWrapper.startServer();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-        server = serverWrapper.getSocketIoServer();
+        eioOptions = EngineIoServerOptions.newFromDefault();
+        eioOptions.setAllowedCorsOrigins(null);
+
+        mEngineIoServer = new EngineIoServer(eioOptions);
+        mSocketIoServer = new SocketIoServer(mEngineIoServer);
+
+//        serverWrapper = new ServerWrapper("::", fonar.busPort, null);
+//        // null means "allow all" as stated in https://github.com/socketio/engine.io-server-java/blob/f8cd8fc96f5ee1a027d9b8d9748523e2f9a14d2a/engine.io-server/src/main/java/io/socket/engineio/server/EngineIoServerOptions.java#L26
+//        try {
+//            serverWrapper.startServer();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return;
+//        }
+//        server = serverWrapper.getSocketIoServer();
+
+        server = mSocketIoServer;
         ns = server.namespace("/");
 
         connections = new HashMap<>();
@@ -212,6 +233,31 @@ public class MessageGateway {
                 System.out.println("Failed to send notification");
             }
         }
+    }
+
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+
+    }
+
+    @Override
+    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+
+    }
+
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+
+    }
+
+    @Override
+    public boolean supportsPartialMessages() {
+        return false;
     }
 
 //
