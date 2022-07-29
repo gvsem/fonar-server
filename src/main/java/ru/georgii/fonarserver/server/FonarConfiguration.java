@@ -9,9 +9,6 @@ public class FonarConfiguration {
     @Value("${server.port}")
     public Integer webPort;
 
-    @Value("${fonar-server.bus.domain}")
-    public String busDomain;
-
     @Value("${fonar-server.bus.port}")
     public Integer busPort;
 

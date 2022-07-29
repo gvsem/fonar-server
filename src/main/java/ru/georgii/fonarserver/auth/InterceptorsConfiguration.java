@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 import ru.georgii.fonarserver.server.FonarConfiguration;
 
 @Configuration
-public class Config extends WebMvcConfigurerAdapter {
+public class InterceptorsConfiguration extends WebMvcConfigurerAdapter {
 
     @Autowired
     FonarConfiguration fonar;
@@ -22,7 +22,7 @@ public class Config extends WebMvcConfigurerAdapter {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getAuthenticationInterceptor())
-                .excludePathPatterns("/socket.io/*", "/version", "/register", "/*/user/photo").pathMatcher(new AntPathMatcher());
+                .excludePathPatterns("/socket.io/*", "/version", "/console.html", "/register", "/*/user/photo").pathMatcher(new AntPathMatcher());
     }
 
 }
