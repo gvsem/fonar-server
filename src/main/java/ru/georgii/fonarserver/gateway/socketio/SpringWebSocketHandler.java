@@ -23,11 +23,20 @@ public final class SpringWebSocketHandler extends EngineIoWebSocket implements W
     }
 
     public Map<String, String> getQuery() {
-        return this.mQuery;
+
+        Map<String, String> query = this.mQuery;
+        for (String m : query.keySet()) {
+            if (m.endsWith("authorization")) {
+                query.put("authorization", query.get(m));
+                break;
+            }
+        }
+        return query;
+
     }
 
     public Map<String, List<String>> getConnectionHeaders() {
-        return this.mHeaders;
+        return mHeaders;
     }
 
     public synchronized void write(String message) throws IOException {
@@ -77,11 +86,7 @@ public final class SpringWebSocketHandler extends EngineIoWebSocket implements W
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         this.mSession = session;
         this.mQuery = ParseQS.decode(session.getUri().toString());
-        for (String m : this.mQuery.keySet()) {
-            if (m.endsWith("authorization")) {
-                mQuery.put("authorization", mQuery.get(m));
-            }
-        }
+
         this.mHeaders = session.getHandshakeHeaders();
         this.mServer.handleWebSocket(this);
     }

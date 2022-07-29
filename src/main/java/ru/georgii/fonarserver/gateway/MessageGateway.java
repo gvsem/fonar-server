@@ -108,101 +108,111 @@ public class MessageGateway {
         ns.on("connection", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                SocketIoSocket client = (SocketIoSocket) args[0];
-                String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
-                try {
-                    User u = authService.authenticateBySaltedGuid(saltedGuid);
-                    if (!connections.containsKey(u.getId())) {
-                        connections.put(u.getId(), new HashSet<>());
-                    }
-                    connections.get(u.getId()).add(client);
-                    System.out.println("Client[{" + client.getId() + "}] - Authorized user id" + u.getId() + " '{}'");
-                } catch (Exception e) {
-                    client.disconnect(true);
-                    System.out.println("Client[{" + client.getId() + "}] - Authorization denied '{}'");
-                }
 
-                client.on("disconnect", new Emitter.Listener() {
+                new Thread() {
                     @Override
-                    public void call(Object... args) {
+                    public void run() {
 
+                        SocketIoSocket client = (SocketIoSocket) args[0];
                         String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
                         try {
                             User u = authService.authenticateBySaltedGuid(saltedGuid);
-                            if (connections.containsKey(u.getId())) {
-                                connections.get(u.getId()).remove(client);
+                            if (!connections.containsKey(u.getId())) {
+                                connections.put(u.getId(), new HashSet<>());
                             }
-                            System.out.println("Client[{}] - Disconnected from chat module.");
+                            connections.get(u.getId()).add(client);
+                            System.out.println("Client[{" + client.getId() + "}] - Authorized user id" + u.getId() + " '{}'");
                         } catch (Exception e) {
-                            System.out.println("Client[{}] - Disconnected from chat module (ERR).");
+                            client.disconnect(true);
+                            System.out.println("Client[{" + client.getId() + "}] - Authorization denied '{}'");
                         }
 
+                        client.on("disconnect", new Emitter.Listener() {
+                            @Override
+                            public void call(Object... args) {
 
-                    }
-                });
-
-                client.on("startedTyping", new Emitter.Listener() {
-                    @Override
-                    public void call(Object... args) {
-
-                        String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
-                        try {
-                            User u = authService.authenticateBySaltedGuid(saltedGuid);
-                            if (connections.containsKey(u.getId())) {
-                                long uidTo = (Integer) args[0];
-                                if (connections.containsKey(uidTo)) {
-                                    for (SocketIoSocket conn : connections.get(uidTo)) {
-                                        conn.send("startedTyping", u.getId());
+                                String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
+                                try {
+                                    User u = authService.authenticateBySaltedGuid(saltedGuid);
+                                    if (connections.containsKey(u.getId())) {
+                                        connections.get(u.getId()).remove(client);
                                     }
+                                    System.out.println("Client[{}] - Disconnected from chat module.");
+                                } catch (Exception e) {
+                                    System.out.println("Client[{}] - Disconnected from chat module (ERR).");
+                                }
+
+
+                            }
+                        });
+
+                        client.on("startedTyping", new Emitter.Listener() {
+                            @Override
+                            public void call(Object... args) {
+
+                                String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
+                                try {
+                                    User u = authService.authenticateBySaltedGuid(saltedGuid);
+                                    if (connections.containsKey(u.getId())) {
+                                        long uidTo = (Integer) args[0];
+                                        if (connections.containsKey(uidTo)) {
+                                            for (SocketIoSocket conn : connections.get(uidTo)) {
+                                                conn.send("startedTyping", u.getId());
+                                            }
+                                        }
+
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
 
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        });
 
-                    }
-                });
+                        client.on("stoppedTyping", new Emitter.Listener() {
+                            @Override
+                            public void call(Object... args) {
 
-                client.on("stoppedTyping", new Emitter.Listener() {
-                    @Override
-                    public void call(Object... args) {
-
-                        String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
-                        try {
-                            User u = authService.authenticateBySaltedGuid(saltedGuid);
-                            if (connections.containsKey(u.getId())) {
-                                long uidTo = (Integer) args[0];
-                                if (connections.containsKey(uidTo)) {
-                                    for (SocketIoSocket conn : connections.get(uidTo)) {
-                                        conn.send("stoppedTyping", u.getId());
+                                String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
+                                try {
+                                    User u = authService.authenticateBySaltedGuid(saltedGuid);
+                                    if (connections.containsKey(u.getId())) {
+                                        long uidTo = (Integer) args[0];
+                                        if (connections.containsKey(uidTo)) {
+                                            for (SocketIoSocket conn : connections.get(uidTo)) {
+                                                conn.send("stoppedTyping", u.getId());
+                                            }
+                                        }
                                     }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
+
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        });
+
+                        client.on("seenMessage", new Emitter.Listener() {
+                            @Override
+                            public void call(Object... args) {
+
+                                String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
+                                try {
+                                    User u = authService.authenticateBySaltedGuid(saltedGuid);
+                                    long messageId = (Integer) args[0];
+                                    long uId = (Integer) args[1];
+                                    Optional<User> to = userService.getUser(uId);
+                                    to.ifPresent(user -> messageService.markAsSeen(user, u.getId(), messageId));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        });
 
                     }
-                });
+                }.start();
 
-                client.on("seenMessage", new Emitter.Listener() {
-                    @Override
-                    public void call(Object... args) {
 
-                        String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
-                        try {
-                            User u = authService.authenticateBySaltedGuid(saltedGuid);
-                            long messageId = (Integer) args[0];
-                            long uId = (Integer) args[1];
-                            Optional<User> to = userService.getUser(uId);
-                            to.ifPresent(user -> messageService.markAsSeen(user, u.getId(), messageId));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                });
 
             }
         });
