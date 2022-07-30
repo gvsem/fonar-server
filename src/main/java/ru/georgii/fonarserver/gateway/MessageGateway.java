@@ -24,7 +24,6 @@ import org.springframework.web.socket.WebSocketSession;
 import ru.georgii.fonarserver.auth.AuthService;
 import ru.georgii.fonarserver.dialog.Message;
 import ru.georgii.fonarserver.dialog.MessageService;
-import ru.georgii.fonarserver.gateway.socketio.ServerWrapper;
 import ru.georgii.fonarserver.server.FonarConfiguration;
 import ru.georgii.fonarserver.user.User;
 import ru.georgii.fonarserver.user.UserService;
@@ -34,7 +33,7 @@ import javax.annotation.PreDestroy;
 import java.util.*;
 
 @Component
-public class MessageGateway {
+public class MessageGateway  {
 
     private static final Logger log = LoggerFactory.getLogger(MessageGateway.class);
     @Autowired
@@ -107,11 +106,11 @@ public class MessageGateway {
 
         ns.on("connection", new Emitter.Listener() {
             @Override
-            public void call(Object... args) {
-
-                new Thread() {
-                    @Override
-                    public void run() {
+            public synchronized void call(Object... args) {
+//
+//                new Thread() {
+//                    @Override
+//                    public void run() {
 
                         SocketIoSocket client = (SocketIoSocket) args[0];
                         String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
@@ -121,32 +120,35 @@ public class MessageGateway {
                                 connections.put(u.getId(), new HashSet<>());
                             }
                             connections.get(u.getId()).add(client);
-                            System.out.println("Client[{" + client.getId() + "}] - Authorized user id" + u.getId() + " '{}'");
+                            System.out.println("Client[{" + client.getId() + "}] - Authorized user id" + u.getId() + " (" + connections.get(u.getId()).size() + ")");
                         } catch (Exception e) {
                             client.disconnect(true);
                             System.out.println("Client[{" + client.getId() + "}] - Authorization denied '{}'");
+                            return;
                         }
 
                         client.on("disconnect", new Emitter.Listener() {
                             @Override
-                            public void call(Object... args) {
+                            public synchronized void call(Object... args) {
 
                                 String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
                                 try {
                                     User u = authService.authenticateBySaltedGuid(saltedGuid);
                                     if (connections.containsKey(u.getId())) {
                                         connections.get(u.getId()).remove(client);
+                                        System.out.println("Client[{" + client.getId() + "}] - Disconnected user id" + u.getId() + " (" + connections.get(u.getId()).size() + ")");
+                                    } else {
+                                        System.out.println("Client[{" + client.getId()  + "}] - Disconnected non-tracked id" + u.getId() + " (" + connections.get(u.getId()).size() + ")");
                                     }
-                                    System.out.println("Client[{}] - Disconnected from chat module.");
                                 } catch (Exception e) {
-                                    System.out.println("Client[{}] - Disconnected from chat module (ERR).");
+                                    System.out.println("Client[{" + client.getId()  + "}] - Disconnected from chat module (ERR).");
                                 }
 
 
                             }
                         });
 
-                        client.on("startedTyping", new Emitter.Listener() {
+                        client.on("meStartedTyping", new Emitter.Listener() {
                             @Override
                             public void call(Object... args) {
 
@@ -155,9 +157,11 @@ public class MessageGateway {
                                     User u = authService.authenticateBySaltedGuid(saltedGuid);
                                     if (connections.containsKey(u.getId())) {
                                         long uidTo = (Integer) args[0];
+                                        System.out.println("Client[{" + client.getId()  + "}] - started typing: " + u.getId() + " -> " + uidTo);
                                         if (connections.containsKey(uidTo)) {
                                             for (SocketIoSocket conn : connections.get(uidTo)) {
-                                                conn.send("startedTyping", u.getId());
+                                                conn.send("userStartedTyping", u.getId());
+                                                System.out.println("Client[{" + client.getId()  + "}] -> Client[{" + conn.getId()  + "}] : sent notification about typing " + u.getId() + " -> " + uidTo);
                                             }
                                         }
 
@@ -169,7 +173,7 @@ public class MessageGateway {
                             }
                         });
 
-                        client.on("stoppedTyping", new Emitter.Listener() {
+                        client.on("meStoppedTyping", new Emitter.Listener() {
                             @Override
                             public void call(Object... args) {
 
@@ -178,9 +182,11 @@ public class MessageGateway {
                                     User u = authService.authenticateBySaltedGuid(saltedGuid);
                                     if (connections.containsKey(u.getId())) {
                                         long uidTo = (Integer) args[0];
+                                        System.out.println("Client[{" + client.getId()  + "}] - stopped typing: " + u.getId() + " -> " + uidTo);
                                         if (connections.containsKey(uidTo)) {
                                             for (SocketIoSocket conn : connections.get(uidTo)) {
-                                                conn.send("stoppedTyping", u.getId());
+                                                conn.send("userStoppedTyping", u.getId());
+                                                System.out.println("Client[{" + client.getId()  + "}] -> Client[{" + conn.getId()  + "}] : sent notification about not typing " + u.getId() + " -> " + uidTo);
                                             }
                                         }
                                     }
@@ -209,8 +215,8 @@ public class MessageGateway {
                             }
                         });
 
-                    }
-                }.start();
+//                    }
+//                }.start();
 
 
 
@@ -244,6 +250,7 @@ public class MessageGateway {
             }
         }
     }
+
 
 
 //
