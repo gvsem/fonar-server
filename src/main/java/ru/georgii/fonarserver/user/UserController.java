@@ -100,7 +100,8 @@ public class UserController {
                                         @AuthenticationPrincipal User me) {
 
         me.setFirstname(userDto.firstname);
-        if (!Objects.equals(userService.userRepository.findByNickname(userDto.nickname).get().getId(), me.getId())) {
+        Optional<User> sameNicknameUser = userService.userRepository.findByNickname(userDto.nickname);
+        if (sameNicknameUser.isPresent() && !Objects.equals(sameNicknameUser.get().getId(), me.getId())) {
             return ResponseEntity.status(CONFLICT).body(null);
         } else {
             me.setNickname(userDto.nickname);

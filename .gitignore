@@ -33,5 +33,5 @@ build/
 .vscode/
 
 src/main/resources/static
-/demo.mv.db
-/demo.trace.db
+/demo2.mv.db
+/demo2.trace.db

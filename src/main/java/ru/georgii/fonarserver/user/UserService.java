@@ -18,6 +18,8 @@ public class UserService {
             return false;
         }
         User u = new User(saltedGuid);
+        u.setNickname("$");
+        u.setFirstname("$");
         userRepository.save(u);
         return true;
     }
