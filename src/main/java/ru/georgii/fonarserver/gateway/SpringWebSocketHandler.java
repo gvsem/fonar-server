@@ -4,22 +4,21 @@ package ru.georgii.fonarserver.gateway;
 import io.socket.engineio.server.EngineIoServer;
 import io.socket.engineio.server.EngineIoWebSocket;
 import io.socket.engineio.server.utils.ParseQS;
+import org.springframework.web.socket.*;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketListener;
-import org.springframework.web.socket.*;
 
 public final class SpringWebSocketHandler implements WebSocketHandler {
 
     static class FonarSocket extends EngineIoWebSocket {
 
-        private WebSocketSession mSession;
-        private Map<String, String> mQuery;
-        private Map<String, List<String>> mHeaders;
+        private final WebSocketSession mSession;
+        private final Map<String, String> mQuery;
+        private final Map<String, List<String>> mHeaders;
 
         FonarSocket(WebSocketSession session) {
             this.mSession = session;
@@ -69,6 +68,7 @@ public final class SpringWebSocketHandler implements WebSocketHandler {
         }
 
     }
+
     private final EngineIoServer mServer;
     Map<String, FonarSocket> sockets;
 
@@ -86,20 +86,27 @@ public final class SpringWebSocketHandler implements WebSocketHandler {
 
     @Override
     public synchronized void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        sockets.get(session.getId()).emit("message", new Object[]{message.getPayload()});
+        if (sockets.containsKey(session.getId())) {
+            sockets.get(session.getId()).emit("message", new Object[]{message.getPayload()});
+        }
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         System.out.println("Transport error " + session.getId());
-        sockets.get(session.getId()).emit("error", new Object[]{"write error", exception.getMessage()});
+        if (sockets.containsKey(session.getId())) {
+            sockets.get(session.getId()).emit("error", new Object[]{"write error", exception.getMessage()});
+        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         System.out.println("Connection closed " + session.getId() + " " + closeStatus.getReason());
-        sockets.get(session.getId()).emit("close", new Object[0]);
-        sockets.remove(session.getId());
+        if (sockets.containsKey(session.getId())) {
+            sockets.get(session.getId()).emit("close", new Object[0]);
+            sockets.remove(session.getId());
+        }
+
     }
 
     @Override

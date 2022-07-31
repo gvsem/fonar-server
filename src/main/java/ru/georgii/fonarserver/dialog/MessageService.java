@@ -13,34 +13,11 @@ import java.util.Objects;
 
 @Component
 public class MessageService {
-
     @Autowired
     MessageRepository messageRepository;
 
     @Autowired
     MessageGateway messageGateway;
-
-//    public Dialog getDialogBetween(User a, User b) {
-//        if ((a == null) || (b == null)) {
-//            throw new RuntimeException("At least one of users is null.");
-//        }
-//
-//        List<Dialog> dialogs = this.dialogRepository.findDialogByMembersMatches(Arrays.asList(a, b));
-//        if (dialogs.size() == 0) {
-//            Dialog d = new Dialog(a, b);
-//            return this.dialogRepository.save(d);
-//        }
-//        return dialogs.get(0);
-//    }
-//
-//    public void postMessage(Dialog dialog, Message m) {
-//        if ((dialog == null) || (m == null)) {
-//            throw new RuntimeException("Dialog and message must not be null.");
-//        }
-//
-//        m.dialog = dialog;
-//        this.messageRepository.save(m);
-//    }
 
     public Message sendMessage(User from, User to, Message m) {
         m.fromUser = from;
@@ -52,14 +29,23 @@ public class MessageService {
         return r;
     }
 
-    public void markAsSeen(User from, Long toId, Long messageId) {
+    public enum SEEN_METHOD_STATUS {
+        OK,
+        NO_MESSAGE_FOUND,
+        ALREADY_SEEN
+    }
+    public SEEN_METHOD_STATUS markAsSeen(User from, Long toId, Long messageId) {
         Message m = this.messageRepository.findMessageInConversation(from.getId(), toId, messageId);
         if (m == null) {
-            return;
+            return SEEN_METHOD_STATUS.NO_MESSAGE_FOUND;
+        }
+        if (m.seen) {
+            return SEEN_METHOD_STATUS.ALREADY_SEEN;
         }
         m.seen = true;
         this.messageRepository.save(m);
         this.messageGateway.notifyAboutSeen(m);
+        return SEEN_METHOD_STATUS.OK;
     }
 
     public List<DialogDto> getDialogs(User from, Long quantity, Long offset) {
@@ -70,7 +56,6 @@ public class MessageService {
             d.lastMessage = m;
             d.lastMessageIsToMe = !Objects.equals(from.getId(), m.fromUser.getId());
             d.user = d.lastMessageIsToMe ? m.fromUser : m.toUser;
-            d.avatarBytes = d.user.getPhotoByteArray();
             d.unreadMessages = this.messageRepository.countMessagesBySeenIsFalseAndFromUserAndToUser
                     (d.lastMessageIsToMe ? m.fromUser : m.toUser, from);
             dialogs.add(d);

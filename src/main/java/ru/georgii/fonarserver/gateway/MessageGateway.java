@@ -89,16 +89,6 @@ public class MessageGateway  {
         mEngineIoServer = new EngineIoServer(eioOptions);
         mSocketIoServer = new SocketIoServer(mEngineIoServer);
 
-//        serverWrapper = new ServerWrapper("::", fonar.busPort, null);
-//        // null means "allow all" as stated in https://github.com/socketio/engine.io-server-java/blob/f8cd8fc96f5ee1a027d9b8d9748523e2f9a14d2a/engine.io-server/src/main/java/io/socket/engineio/server/EngineIoServerOptions.java#L26
-//        try {
-//            serverWrapper.startServer();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return;
-//        }
-//        server = serverWrapper.getSocketIoServer();
-
         server = mSocketIoServer;
         ns = server.namespace("/");
 
@@ -107,10 +97,6 @@ public class MessageGateway  {
         ns.on("connection", new Emitter.Listener() {
             @Override
             public synchronized void call(Object... args) {
-//
-//                new Thread() {
-//                    @Override
-//                    public void run() {
 
                         SocketIoSocket client = (SocketIoSocket) args[0];
                         String saltedGuid = client.getInitialQuery().getOrDefault("authorization", null);
@@ -214,10 +200,6 @@ public class MessageGateway  {
 
                             }
                         });
-
-//                    }
-//                }.start();
-
 
 
             }

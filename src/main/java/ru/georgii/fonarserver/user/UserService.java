@@ -12,18 +12,22 @@ public class UserService {
     @Autowired
     UserRepository userRepository;
 
-    public User registerUser(String saltedGuid) {
-        List<User> existingUsers = userRepository.findByUid(saltedGuid);
-        if (existingUsers.size() != 0) {
-            return existingUsers.get(0);
+
+    public boolean registerUser(String saltedGuid) {
+        if (getUserBySaltedGuid(saltedGuid).isPresent()) {
+            return false;
         }
         User u = new User(saltedGuid);
         userRepository.save(u);
-        return u;
+        return true;
     }
 
     public Optional<User> getUser(Long id) {
         return userRepository.findById(id);
+    }
+
+    public Optional<User> getUserBySaltedGuid(String uid) {
+        return userRepository.findByUid(uid);
     }
 
     public List<User> getUsers() {

@@ -6,6 +6,7 @@ import ru.georgii.fonarserver.user.User;
 import ru.georgii.fonarserver.user.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class AuthService {
@@ -17,11 +18,11 @@ public class AuthService {
         if (saltedGuid == null) {
             throw new AuthorizationException("No saltedGuid found.");
         }
-        List<User> users = this.userRepository.findByUid(saltedGuid);
-        if (users.size() == 0) {
+        Optional<User> user = this.userRepository.findByUid(saltedGuid);
+        if (user.isEmpty()) {
             throw new AuthorizationException("Authentication failed.");
         }
-        return users.get(0);
+        return user.get();
     }
 
 }
