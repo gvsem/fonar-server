@@ -143,7 +143,7 @@ public class UserController {
             @ApiResponse(responseCode = "415", description = "Image is malformed"),
     })
     @PostMapping(value = "user/photo", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE} )
-    public ResponseEntity<Void> uploadImage(@Parameter(description = "Id of user", required = true,
+    public ResponseEntity<Void> uploadImage(@Parameter(description = "Image", required = true,
                                             content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE))
                                             @RequestParam("image") MultipartFile file,
                                             @AuthenticationPrincipal User me) {

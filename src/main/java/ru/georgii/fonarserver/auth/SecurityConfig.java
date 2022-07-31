@@ -51,7 +51,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/webjars/**",
                 "/docs");
 
-        web.ignoring().antMatchers("/socket.io/*", "/version", "/console.html", "/register", "/*/user/photo");
+        web.ignoring().antMatchers("/socket.io/*", "/version", "/console.html", "/register");
     }
 
     private RequestMatcher getRequestMatchers() {
