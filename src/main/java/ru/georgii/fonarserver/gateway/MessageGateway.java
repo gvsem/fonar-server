@@ -183,7 +183,7 @@ public class MessageGateway  {
                             }
                         });
 
-                        client.on("seenMessage", new Emitter.Listener() {
+                        client.on("meSeenMessage", new Emitter.Listener() {
                             @Override
                             public void call(Object... args) {
 
@@ -212,7 +212,7 @@ public class MessageGateway  {
         if (connections.containsKey(m.getToUserId())) {
             try {
                 for (SocketIoSocket c : connections.get(m.getToUserId())) {
-                    c.send("message", new ObjectMapper().writeValueAsString(m));
+                    c.send("youGotMessage", new ObjectMapper().writeValueAsString(m));
                 }
             } catch (Exception e) {
                 System.out.println("Failed to send notification");
@@ -225,7 +225,7 @@ public class MessageGateway  {
         if (connections.containsKey(m.getToUserId())) {
             try {
                 for (SocketIoSocket c : connections.get(m.getToUserId())) {
-                    c.send("messageSeen", m.getId(), m.getFromUserId());
+                    c.send("yourMessageSeen", m.getId(), m.getFromUserId());
                 }
             } catch (Exception e) {
                 System.out.println("Failed to send notification");
@@ -233,44 +233,5 @@ public class MessageGateway  {
         }
     }
 
-
-
-//
-//    private ConnectListener onConnected() {
-//        return client -> {
-//            System.out.println(client.isChannelOpen());
-//            System.out.println(client.getSessionId());
-//            //System.out.println(client.);
-//            HandshakeData handshakeData = client.getHandshakeData();
-//            String saltedGuid = handshakeData.getSingleUrlParam("authorization");
-//            try {
-//                User u = authService.authenticateBySaltedGuid(saltedGuid);
-//                if (!connections.containsKey(u.getId())) {
-//                    connections.put(u.getId(), new HashSet<SocketIOClient>());
-//                }
-//                connections.get(u.getId()).add(client);
-//                System.out.println("Client[{"+ client.getRemoteAddress() +"}] - Authorized user id" + u.getId() + " '{}'" );
-//            } catch (Exception e) {
-//                client.disconnect();
-//                System.out.println("Client[{" + client.getRemoteAddress() + "}] - Authorization denied '{}'" );
-//            }
-//
-//        };
-//    }
-
-//    private DisconnectListener onDisconnected() {
-//        return client -> {
-//            HandshakeData handshakeData = client.getHandshakeData();
-//            String saltedGuid = handshakeData.getSingleUrlParam("authorization");
-//            try {
-//                User u = authService.authenticateBySaltedGuid(saltedGuid);
-//                if (connections.containsKey(u.getId())) {
-//                    connections.get(u.getId()).remove(client);
-//                }
-//            } catch (Exception e) {
-//            }
-//            System.out.println("Client[{}] - Disconnected from chat module." );
-//        };
-//    }
 
 }

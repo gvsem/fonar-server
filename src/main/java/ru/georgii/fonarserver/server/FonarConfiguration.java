@@ -3,7 +3,10 @@ package ru.georgii.fonarserver.server;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+
+import javax.validation.constraints.Null;
 
 @Component
 public class FonarConfiguration {
@@ -32,9 +35,26 @@ public class FonarConfiguration {
     @Value("${fonar-server.salt}")
     public String salt;
 
+
+    @Value("${server.port}")
+    private String _serverPort;
+
+    @JsonIgnore
+    @Nullable
+    @Value("${fonar-server.socket.url}")
+    private String _socketUrl = null;
+
     @Schema(example = ":20777", description = "Full absolute url or :PORT expression to Fonar socket", required = true)
-    @Value(":${server.port}")
-    public String socketUrl;
+    public String getSocketUrl() {
+        assert _socketUrl != null;
+        if (_socketUrl.startsWith(":")) {
+            return _socketUrl;
+        } else if (!_socketUrl.equals("")) {
+            return _socketUrl;
+        } else {
+            return ":" + _serverPort;
+        }
+    }
 
     @Schema(example = "DemoServer", description = "Human-readable server namea", required = true)
     @Value("${fonar-server.name}")
